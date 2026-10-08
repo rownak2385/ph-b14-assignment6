@@ -6,10 +6,21 @@ const API_ENDPOINTS = [
 ] as const;
 
 export class FitLogApiError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly code:
+      | "INVALID_DATA"
+      | "INVALID_ID"
+      | "NOT_FOUND"
+      | "UNAVAILABLE" = "INVALID_DATA",
+  ) {
     super(message);
     this.name = "FitLogApiError";
   }
+}
+
+export function isWorkoutNotFoundError(error: unknown) {
+  return error instanceof FitLogApiError && error.code === "NOT_FOUND";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -94,6 +105,7 @@ async function requestWithFallback<T>(
   parse: (payload: unknown) => T,
 ): Promise<T> {
   const failures: string[] = [];
+  let notFoundResponses = 0;
 
   for (const endpoint of API_ENDPOINTS) {
     try {
@@ -102,9 +114,16 @@ async function requestWithFallback<T>(
         headers: { Accept: "application/json" },
       });
 
+      if (response.status === 404) {
+        notFoundResponses += 1;
+        failures.push("The requested workout was not found.");
+        continue;
+      }
+
       if (!response.ok) {
         throw new FitLogApiError(
           `The API returned ${response.status} ${response.statusText}.`,
+          "UNAVAILABLE",
         );
       }
 
@@ -115,8 +134,13 @@ async function requestWithFallback<T>(
     }
   }
 
+  if (path && notFoundResponses === API_ENDPOINTS.length) {
+    throw new FitLogApiError("The requested workout was not found.", "NOT_FOUND");
+  }
+
   throw new FitLogApiError(
     `Unable to load workout data from either API. ${failures.join(" ")}`,
+    "UNAVAILABLE",
   );
 }
 
@@ -135,7 +159,7 @@ export function getWorkoutById(id: Workout["id"] | string): Promise<Workout> {
 
   if (!Number.isInteger(workoutId) || workoutId <= 0) {
     return Promise.reject(
-      new FitLogApiError("Workout ID must be a positive integer."),
+      new FitLogApiError("Workout ID must be a positive integer.", "INVALID_ID"),
     );
   }
 
