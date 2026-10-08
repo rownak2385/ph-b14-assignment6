@@ -1,18 +1,22 @@
+import Hero from "@/components/layout/Hero";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
-      <section className="w-full max-w-3xl rounded-2xl border border-white/10 bg-surface p-8 sm:p-12">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-accent">
-          FitLog
-        </p>
-        <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-          Workout Library
-        </h1>
-        <p className="mt-4 max-w-xl text-base leading-7 text-muted">
-          Your focused space for discovering workouts and building a consistent
-          training plan.
-        </p>
+    <>
+      <Hero />
+      <section
+        id="library"
+        className="scroll-mt-20 px-4 py-20 sm:px-6 sm:py-24 lg:px-8"
+      >
+        <div className="mx-auto w-full max-w-7xl">
+          <h2 className="font-display text-4xl font-bold uppercase leading-none tracking-tight text-foreground sm:text-5xl">
+            The Library
+          </h2>
+          <p className="mt-4 text-base text-muted sm:text-lg">
+            Twelve lifts covering every major muscle group.
+          </p>
+        </div>
       </section>
-    </main>
+    </>
   );
 }
