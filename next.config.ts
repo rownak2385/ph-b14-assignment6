@@ -1,8 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "img.magnific.com",
+        port: "",
+        pathname: "/free-photo/**",
+        search: "?w=740",
+      },
+    ],
+  },
   partialPrefetching: true,
   turbopack: {
     root: process.cwd(),
