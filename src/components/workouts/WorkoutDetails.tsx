@@ -134,7 +134,7 @@ export default function WorkoutDetails({ workout }: WorkoutDetailsProps) {
             </section>
 
             <div className="mt-9">
-              <ActionControls />
+              <ActionControls workout={workout} />
             </div>
           </div>
         </div>

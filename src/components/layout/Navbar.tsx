@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bookmark, ClipboardList, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useWorkoutPlan } from "@/context/WorkoutContext";
+import { useHydrated } from "@/hooks/useHydrated";
 
 const navLinks = [
   { href: "/", label: "Workout" },
@@ -26,6 +28,11 @@ function isActiveRoute(pathname: string, href: string) {
 export default function Navbar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { plan, saved, isHydrated } = useWorkoutPlan();
+  const hasHydrated = useHydrated();
+  const canShowStoredState = isHydrated && hasHydrated;
+  const planCount = canShowStoredState ? plan.length : 0;
+  const savedCount = canShowStoredState ? saved.length : 0;
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -71,19 +78,25 @@ export default function Navbar() {
         <div className="hidden items-center gap-2 md:flex">
           <Link
             href="/my-plan"
-            aria-label="View today's plan, 0 workouts"
+            aria-label={`View today's plan, ${planCount} workouts`}
             className="inline-flex h-9 items-center gap-2 rounded-md bg-accent px-3 text-xs font-bold uppercase tracking-[0.1em] text-background transition-colors hover:bg-[#d8ff40] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <ClipboardList aria-hidden="true" className="size-4" />
-            Plan <span className="tabular-nums">0</span>
+            Plan{" "}
+            <span aria-live="polite" className="tabular-nums">
+              {planCount}
+            </span>
           </Link>
           <Link
             href="/my-plan"
-            aria-label="View saved workouts, 0 workouts"
+            aria-label={`View saved workouts, ${savedCount} workouts`}
             className="inline-flex h-9 items-center gap-2 rounded-md border border-white/20 px-3 text-xs font-bold uppercase tracking-[0.1em] text-foreground transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <Bookmark aria-hidden="true" className="size-4" />
-            Saved <span className="tabular-nums">0</span>
+            Saved{" "}
+            <span aria-live="polite" className="tabular-nums">
+              {savedCount}
+            </span>
           </Link>
         </div>
 
@@ -134,20 +147,20 @@ export default function Navbar() {
               <Link
                 href="/my-plan"
                 onClick={closeMenu}
-                aria-label="View today's plan, 0 workouts"
+                aria-label={`View today's plan, ${planCount} workouts`}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-3 text-xs font-bold uppercase tracking-[0.1em] text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <ClipboardList aria-hidden="true" className="size-4" />
-                Plan 0
+                Plan <span className="tabular-nums">{planCount}</span>
               </Link>
               <Link
                 href="/my-plan"
                 onClick={closeMenu}
-                aria-label="View saved workouts, 0 workouts"
+                aria-label={`View saved workouts, ${savedCount} workouts`}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/20 px-3 text-xs font-bold uppercase tracking-[0.1em] text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <Bookmark aria-hidden="true" className="size-4" />
-                Saved 0
+                Saved <span className="tabular-nums">{savedCount}</span>
               </Link>
             </div>
           </div>
