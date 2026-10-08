@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FitLog — Workout Library & Daily Fitness Planner
 
-## Getting Started
+## Overview
 
-First, run the development server:
+FitLog is a responsive fitness library and daily workout planner. It lets users explore twelve exercises from a live REST API, review detailed instructions and training specs, build a focused plan of up to five workouts, save exercises for later, and track completed lifts. Plan and saved data persist in the browser so the experience survives refreshes.
+
+## Key Features
+
+- Browse a responsive library of twelve API-powered workouts with images, muscle-group tags, equipment, duration, calories, and ratings.
+- Sort the workout library by duration, calories, or rating.
+- Open a dedicated details page for every workout with key specs and step-by-step instructions.
+- Add up to five exercises to today's plan or save any workout for later, with live navbar counters and toast feedback.
+- Review live plan metrics for exercise count, total minutes, and total calories.
+- Mark planned workouts as complete and remove items independently from the plan or saved list.
+- Keep plan, saved, and completion state synchronized across routes and browser refreshes with React Context and `localStorage`.
+- Handle loading, empty, API error, missing-workout, and unknown-route states with responsive, accessible UI.
+
+## Technologies
+
+- Next.js 16 with the App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Lucide React
+- Sonner
+- React Context
+- Browser `localStorage`
+- REST API integration
+
+## Installation
+
+Prerequisites: Node.js 20.9 or newer and npm.
+
+```bash
+git clone https://github.com/rownak2385/ph-b14-assignment6.git
+cd ph-b14-assignment6
+npm install
+```
+
+## Environment and API
+
+FitLog does not require environment variables. Workout data is requested from the primary endpoint and automatically falls back to the alternate endpoint if the primary service is unavailable.
+
+- Primary collection: `https://api.abcz.workers.dev/api/fitlog`
+- Primary workout: `https://api.abcz.workers.dev/api/fitlog/:id`
+- Alternate collection: `https://api.api-store.workers.dev/api/fitlog`
+- Alternate workout: `https://api.api-store.workers.dev/api/fitlog/:id`
+
+The app validates API responses before rendering them. Personal plan data remains local to the browser under the `fitlog:v1` storage key.
+
+## Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Workout library, hero, and sorting controls |
+| `/workouts/[id]` | Dynamic workout details and plan/save actions |
+| `/my-plan` | Today's plan, saved workouts, metrics, completion, and removal |
+| Any unknown route | Custom FitLog 404 page |
+
+## Running Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The development server supports direct navigation and refreshes on all application routes.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run build
+npm run start
+```
 
-## Learn More
+The production server runs at [http://localhost:3000](http://localhost:3000) by default.
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The project is configured for deployment on Vercel. Import the GitHub repository, keep the detected Next.js settings, and deploy without adding environment variables. Vercel runs the production build automatically and supports direct refreshes on App Router routes.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## GitHub Repository
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[github.com/rownak2385/ph-b14-assignment6](https://github.com/rownak2385/ph-b14-assignment6)
