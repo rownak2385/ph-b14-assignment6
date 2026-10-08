@@ -18,23 +18,39 @@ export const MAX_PLAN_SIZE = 5;
 
 type PlanActionResult = "added" | "duplicate" | "limit" | "not-ready";
 type SavedActionResult = "saved" | "duplicate" | "not-ready";
+type CompletionActionResult =
+  | "completed"
+  | "duplicate"
+  | "not-found"
+  | "not-ready";
+type RemoveActionResult = "removed" | "not-found" | "not-ready";
 
 type WorkoutPlanContextValue = {
   plan: Workout[];
   saved: Workout[];
+  completedIds: number[];
   addToPlan: (workout: Workout) => PlanActionResult;
   saveForLater: (workout: Workout) => SavedActionResult;
+  markAsDone: (id: number) => CompletionActionResult;
+  removeFromPlan: (id: number) => RemoveActionResult;
+  removeFromSaved: (id: number) => RemoveActionResult;
   isInPlan: (id: number) => boolean;
   isSaved: (id: number) => boolean;
+  isDone: (id: number) => boolean;
   isHydrated: boolean;
 };
 
 type PersistedWorkoutState = {
   plan: Workout[];
   saved: Workout[];
+  completedIds: number[];
 };
 
-const emptyState: PersistedWorkoutState = { plan: [], saved: [] };
+const emptyState: PersistedWorkoutState = {
+  plan: [],
+  saved: [],
+  completedIds: [],
+};
 const WorkoutPlanContext = createContext<WorkoutPlanContextValue | null>(null);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -107,6 +123,28 @@ function restoreCollection(value: unknown, limit?: number) {
   return restored;
 }
 
+function restoreCompletedIds(value: unknown, plan: Workout[]) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const planIds = new Set(plan.map((workout) => workout.id));
+  const completedIds = new Set<number>();
+
+  for (const id of value) {
+    if (
+      isFiniteNumber(id) &&
+      Number.isInteger(id) &&
+      id > 0 &&
+      planIds.has(id)
+    ) {
+      completedIds.add(id);
+    }
+  }
+
+  return Array.from(completedIds);
+}
+
 function readPersistedState(): PersistedWorkoutState {
   try {
     const storedValue = window.localStorage.getItem(STORAGE_KEY);
@@ -121,9 +159,12 @@ function readPersistedState(): PersistedWorkoutState {
       return emptyState;
     }
 
+    const plan = restoreCollection(parsed.plan, MAX_PLAN_SIZE);
+
     return {
-      plan: restoreCollection(parsed.plan, MAX_PLAN_SIZE),
+      plan,
       saved: restoreCollection(parsed.saved),
+      completedIds: restoreCompletedIds(parsed.completedIds, plan),
     };
   } catch {
     return emptyState;
@@ -141,9 +182,11 @@ function writePersistedState(state: PersistedWorkoutState) {
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [plan, setPlan] = useState<Workout[]>([]);
   const [saved, setSaved] = useState<Workout[]>([]);
+  const [completedIds, setCompletedIds] = useState<number[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
   const planRef = useRef<Workout[]>([]);
   const savedRef = useRef<Workout[]>([]);
+  const completedIdsRef = useRef<number[]>([]);
 
   useEffect(() => {
     let isActive = true;
@@ -156,8 +199,10 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
       const restored = readPersistedState();
       planRef.current = restored.plan;
       savedRef.current = restored.saved;
+      completedIdsRef.current = restored.completedIds;
       setPlan(restored.plan);
       setSaved(restored.saved);
+      setCompletedIds(restored.completedIds);
       setIsHydrated(true);
     });
 
@@ -168,9 +213,9 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isHydrated) {
-      writePersistedState({ plan, saved });
+      writePersistedState({ plan, saved, completedIds });
     }
-  }, [isHydrated, plan, saved]);
+  }, [isHydrated, plan, saved, completedIds]);
 
   const addToPlan = useCallback(
     (workout: Workout): PlanActionResult => {
@@ -223,6 +268,84 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     [isHydrated],
   );
 
+  const markAsDone = useCallback(
+    (id: number): CompletionActionResult => {
+      if (!isHydrated) {
+        toast.info("Your saved workout selections are still loading.");
+        return "not-ready";
+      }
+
+      const workout = planRef.current.find((item) => item.id === id);
+
+      if (!workout) {
+        toast.error("That workout is no longer in today's plan.");
+        return "not-found";
+      }
+
+      if (completedIdsRef.current.includes(id)) {
+        toast.info(`${workout.name} is already marked done.`);
+        return "duplicate";
+      }
+
+      const nextCompletedIds = [...completedIdsRef.current, id];
+      completedIdsRef.current = nextCompletedIds;
+      setCompletedIds(nextCompletedIds);
+      toast.success(`${workout.name} marked as done.`);
+      return "completed";
+    },
+    [isHydrated],
+  );
+
+  const removeFromPlan = useCallback(
+    (id: number): RemoveActionResult => {
+      if (!isHydrated) {
+        toast.info("Your saved workout selections are still loading.");
+        return "not-ready";
+      }
+
+      const workout = planRef.current.find((item) => item.id === id);
+
+      if (!workout) {
+        return "not-found";
+      }
+
+      const nextPlan = planRef.current.filter((item) => item.id !== id);
+      const nextCompletedIds = completedIdsRef.current.filter(
+        (completedId) => completedId !== id,
+      );
+
+      planRef.current = nextPlan;
+      completedIdsRef.current = nextCompletedIds;
+      setPlan(nextPlan);
+      setCompletedIds(nextCompletedIds);
+      toast.success(`${workout.name} removed from today's plan.`);
+      return "removed";
+    },
+    [isHydrated],
+  );
+
+  const removeFromSaved = useCallback(
+    (id: number): RemoveActionResult => {
+      if (!isHydrated) {
+        toast.info("Your saved workout selections are still loading.");
+        return "not-ready";
+      }
+
+      const workout = savedRef.current.find((item) => item.id === id);
+
+      if (!workout) {
+        return "not-found";
+      }
+
+      const nextSaved = savedRef.current.filter((item) => item.id !== id);
+      savedRef.current = nextSaved;
+      setSaved(nextSaved);
+      toast.success(`${workout.name} removed from saved workouts.`);
+      return "removed";
+    },
+    [isHydrated],
+  );
+
   const isInPlan = useCallback(
     (id: number) => planRef.current.some((workout) => workout.id === id),
     [],
@@ -233,17 +356,40 @@ export function WorkoutProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const isDone = useCallback(
+    (id: number) => completedIdsRef.current.includes(id),
+    [],
+  );
+
   const value = useMemo<WorkoutPlanContextValue>(
     () => ({
       plan,
       saved,
+      completedIds,
       addToPlan,
       saveForLater,
+      markAsDone,
+      removeFromPlan,
+      removeFromSaved,
       isInPlan,
       isSaved,
+      isDone,
       isHydrated,
     }),
-    [plan, saved, addToPlan, saveForLater, isInPlan, isSaved, isHydrated],
+    [
+      plan,
+      saved,
+      completedIds,
+      addToPlan,
+      saveForLater,
+      markAsDone,
+      removeFromPlan,
+      removeFromSaved,
+      isInPlan,
+      isSaved,
+      isDone,
+      isHydrated,
+    ],
   );
 
   return (

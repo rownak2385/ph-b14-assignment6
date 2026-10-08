@@ -1,12 +1,31 @@
 "use client";
 
-import { AlertTriangle, Dumbbell, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertTriangle, ChevronDown, Dumbbell, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { getWorkouts } from "@/lib/fitlog";
 import type { Workout } from "@/types/workout";
 import WorkoutCard from "./WorkoutCard";
 
 type LibraryState = "loading" | "success" | "error";
+type SortOption = "duration" | "calories" | "rating";
+
+function safeNumber(value: number) {
+  return Number.isFinite(value) ? value : 0;
+}
+
+function compareWorkouts(a: Workout, b: Workout, sortBy: SortOption) {
+  let result = 0;
+
+  if (sortBy === "duration") {
+    result = safeNumber(a.duration) - safeNumber(b.duration);
+  } else if (sortBy === "calories") {
+    result = safeNumber(b.caloriesBurned) - safeNumber(a.caloriesBurned);
+  } else {
+    result = safeNumber(b.rating) - safeNumber(a.rating);
+  }
+
+  return result || a.id - b.id;
+}
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error
@@ -45,6 +64,11 @@ export default function WorkoutLibrary() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [status, setStatus] = useState<LibraryState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("duration");
+  const sortedWorkouts = useMemo(
+    () => [...workouts].sort((a, b) => compareWorkouts(a, b, sortBy)),
+    [workouts, sortBy],
+  );
 
   const retryLoad = async () => {
     setStatus("loading");
@@ -92,16 +116,40 @@ export default function WorkoutLibrary() {
       aria-busy={status === "loading"}
     >
       <div className="mx-auto w-full max-w-7xl">
-        <div className="mb-10 sm:mb-12">
-          <h2
-            id="library-heading"
-            className="font-display text-4xl font-bold uppercase leading-none tracking-tight text-foreground sm:text-5xl"
-          >
-            The Library
-          </h2>
-          <p className="mt-4 text-base text-muted sm:text-lg">
-            Twelve lifts covering every major muscle group.
-          </p>
+        <div className="mb-10 flex flex-col gap-6 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2
+              id="library-heading"
+              className="font-display text-4xl font-bold uppercase leading-none tracking-tight text-foreground sm:text-5xl"
+            >
+              The Library
+            </h2>
+            <p className="mt-4 text-base text-muted sm:text-lg">
+              Twelve lifts covering every major muscle group.
+            </p>
+          </div>
+
+          <label className="w-full sm:w-auto">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-muted">
+              Sort By
+            </span>
+            <span className="relative block">
+              <select
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value as SortOption)}
+                disabled={status !== "success"}
+                className="min-h-11 w-full appearance-none rounded-md border border-white/15 bg-surface py-2.5 pl-4 pr-11 text-sm font-bold text-foreground outline-none transition-colors hover:border-accent/60 focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-wait disabled:opacity-60 sm:w-44"
+              >
+                <option value="duration">Duration</option>
+                <option value="calories">Calories</option>
+                <option value="rating">Rating</option>
+              </select>
+              <ChevronDown
+                aria-hidden="true"
+                className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-accent"
+              />
+            </span>
+          </label>
         </div>
 
         {status === "loading" && (
@@ -150,7 +198,7 @@ export default function WorkoutLibrary() {
 
         {status === "success" && workouts.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {workouts.map((workout) => (
+            {sortedWorkouts.map((workout) => (
               <WorkoutCard key={workout.id} workout={workout} />
             ))}
           </div>

@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { useWorkoutPlan } from "@/context/WorkoutContext";
 import type { Workout } from "@/types/workout";
 
 type PlanWorkoutCardProps = {
@@ -26,9 +27,26 @@ export default function PlanWorkoutCard({
 }: PlanWorkoutCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
   const isPlannedWorkout = collection === "plan";
+  const { isDone, markAsDone, removeFromPlan, removeFromSaved } =
+    useWorkoutPlan();
+  const completed = isPlannedWorkout && isDone(workout.id);
+
+  const removeWorkout = () => {
+    if (isPlannedWorkout) {
+      removeFromPlan(workout.id);
+    } else {
+      removeFromSaved(workout.id);
+    }
+  };
 
   return (
-    <article className="overflow-hidden rounded-xl border border-white/10 bg-surface">
+    <article
+      className={`overflow-hidden rounded-xl border bg-surface transition-colors ${
+        completed
+          ? "border-accent/35 shadow-[inset_3px_0_0_#ccff00]"
+          : "border-white/10"
+      }`}
+    >
       <div className="grid sm:grid-cols-[10rem_minmax(0,1fr)] lg:grid-cols-[11rem_minmax(0,1fr)_auto]">
         <div className="relative aspect-[16/10] overflow-hidden bg-[#0d1117] sm:aspect-auto sm:min-h-44">
           {imageFailed ? (
@@ -51,9 +69,17 @@ export default function PlanWorkoutCard({
         </div>
 
         <div className="min-w-0 p-5 sm:p-6">
-          <h3 className="font-display text-2xl font-bold uppercase leading-tight tracking-tight text-foreground sm:text-3xl">
-            {workout.name}
-          </h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="font-display text-2xl font-bold uppercase leading-tight tracking-tight text-foreground sm:text-3xl">
+              {workout.name}
+            </h3>
+            {completed && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[0.65rem] font-extrabold uppercase tracking-[0.12em] text-accent">
+                <Check aria-hidden="true" className="size-3.5" />
+                Completed
+              </span>
+            )}
+          </div>
           <p className="mt-2 flex items-center gap-2 text-sm text-muted">
             <Dumbbell aria-hidden="true" className="size-4 shrink-0 text-accent" />
             <span className="truncate">{workout.equipment}</span>
@@ -93,21 +119,29 @@ export default function PlanWorkoutCard({
           {isPlannedWorkout && (
             <button
               type="button"
-              disabled
-              title="Mark as Done will be available in the next phase"
-              className="inline-flex min-h-10 flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-md bg-accent/45 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.08em] text-background/70 lg:flex-none"
+              disabled={completed}
+              aria-label={
+                completed
+                  ? `${workout.name} is completed`
+                  : `Mark ${workout.name} as done`
+              }
+              onClick={() => markAsDone(workout.id)}
+              className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-xs font-extrabold uppercase tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent lg:flex-none ${
+                completed
+                  ? "cursor-not-allowed border border-accent/30 bg-accent/10 text-accent"
+                  : "bg-accent text-background hover:bg-[#d8ff40]"
+              }`}
             >
               <Check aria-hidden="true" className="size-4" />
-              Mark as Done
+              {completed ? "Done" : "Mark as Done"}
             </button>
           )}
 
           <button
             type="button"
-            disabled
             aria-label={`Remove ${workout.name} from ${isPlannedWorkout ? "today's plan" : "saved workouts"}`}
-            title="Remove will be available in the next phase"
-            className="inline-flex size-10 shrink-0 cursor-not-allowed items-center justify-center rounded-md border border-white/10 text-muted/50 lg:self-end"
+            onClick={removeWorkout}
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-white/15 text-muted transition-colors hover:border-red-400/50 hover:bg-red-400/10 hover:text-red-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 lg:self-end"
           >
             <X aria-hidden="true" className="size-4" />
           </button>
