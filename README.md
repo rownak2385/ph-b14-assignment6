@@ -1,8 +1,12 @@
 # FitLog — Workout Library & Daily Fitness Planner
 
+FitLog is a responsive Next.js application for discovering workouts, building a focused daily plan, and tracking completed exercises with persistent browser state.
+
+[**Live Website**](https://fitlog-eosin-six.vercel.app/) | [**GitHub Repository**](https://github.com/rownak2385/ph-b14-assignment6)
+
 ## Overview
 
-FitLog is a responsive fitness library and daily workout planner. It lets users explore twelve exercises from a live REST API, review detailed instructions and training specs, build a focused plan of up to five workouts, save exercises for later, and track completed lifts. Plan and saved data persist in the browser so the experience survives refreshes.
+FitLog provides twelve exercises from a live REST API, detailed training guidance, a five-workout daily plan, saved exercises, and completion tracking. Plan data persists across browser sessions.
 
 ## Key Features
 
@@ -63,21 +67,16 @@ The app validates API responses before rendering them. Personal plan data remain
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The development server supports direct navigation and refreshes on all application routes.
-
 ## Production Build
 
 ```bash
 npm run lint
 npm run build
-npm run start
 ```
-
-The production server runs at [http://localhost:3000](http://localhost:3000) by default.
 
 ## Deployment
 
-The project is configured for deployment on Vercel. Import the GitHub repository, keep the detected Next.js settings, and deploy without adding environment variables. Vercel runs the production build automatically and supports direct refreshes on App Router routes.
+FitLog is deployed on Vercel: [https://fitlog-eosin-six.vercel.app/](https://fitlog-eosin-six.vercel.app/)
 
 ## GitHub Repository
 
